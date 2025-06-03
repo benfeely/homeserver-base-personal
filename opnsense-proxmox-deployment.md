@@ -25,38 +25,59 @@ This document outlines the implementation plan for setting up and managing an OP
 ### Phase 1: Proxmox Setup on Protectli Hardware
 
 1. Prepare for Proxmox installation
+
    - Download Proxmox VE ISO
    - Create bootable USB installation media
    - Gather network configuration details for Proxmox host
+   - Plan networking for cluster integration with T40 Proxmox instance
 
 2. Install Proxmox VE on Protectli hardware
+
    - Configure BIOS settings (enable virtualization, adjust boot order)
    - Install Proxmox from USB to internal storage
    - Set up initial networking for Proxmox management
+     - Use a static IP on same subnet as T40 Proxmox
+     - Configure unique hostname different from T40 instance
    - Apply system updates and optimizations
 
 3. Configure Proxmox networking for OPNsense
+
    - Create network bridges for WAN and LAN interfaces
    - Configure any additional network bridges for VLANs/DMZ
    - Validate network connectivity
 
+4. Set up Proxmox clustering
+   - On T40 Proxmox: Create a cluster if not already done
+     ```bash
+     # Run on T40 only if no cluster exists yet
+     pvecm create clustername
+     ```
+   - On T40 Proxmox: Generate join information for new node
+     ```bash
+     # Generate join token on T40
+     pvecm token generate
+     ```
+   - On Protectli Proxmox: Join the existing cluster
+     ```bash
+     # Run on Protectli Proxmox with token from T40
+     pvecm add T40-proxmox-ip-address -token token_from_previous_step
+     ```
+   - Verify cluster status on both nodes
+     ```bash
+     # Run on either node
+     pvecm status
+     ```
+
 ### Phase 2: OPNsense VM Deployment
 
 1. Create OPNsense VM on Proxmox
+
    - Allocate appropriate resources (CPU, RAM, storage)
    - Configure network interfaces to match production requirements
    - Install OPNsense from ISO
 
 2. Configure initial network settings
-   - Basic WAN and LAN configuration
-   - Minimum viable firewall rules
-   - SSH access for management
 
-3. Enable API access for automation
-   - Enable the OPNsense API
-   - Create dedicated API user with appropriate permissions
-   - Generate and securely store API credentials
-   - Test API connectivity
    - Basic WAN and LAN configuration
    - Minimum viable firewall rules
    - SSH access for management
@@ -70,16 +91,19 @@ This document outlines the implementation plan for setting up and managing an OP
 ### Phase 3: Configuration Management Implementation
 
 1. Initialize the infrastructure code repository
+
    - Create the folder structure for organizing configurations
    - Set up version control with Git
    - Create initial configuration YAML files
 
 2. Implement core Python utility scripts
+
    - API authentication and interaction
    - Configuration loading from YAML
    - Logging and error handling
 
 3. Develop configuration deployment scripts
+
    - Interface configuration
    - VLAN setup
    - Firewall rules
@@ -94,11 +118,13 @@ This document outlines the implementation plan for setting up and managing an OP
 ### Phase 4: Advanced Configuration and Integration
 
 1. Implement Proxmox VM management integration
+
    - VM snapshot before configuration changes
    - Power management (restart after major changes)
    - Monitoring of VM health
 
 2. Add validation and testing capabilities
+
    - Pre-deployment validation
    - Post-deployment testing
    - Automated rollback capability
@@ -118,27 +144,27 @@ The key to this workflow is the ability to reliably backup and restore configura
 def backup_configuration():
     """Create and download OPNsense configuration backup"""
     import datetime
-    
+
     # Create backup through API
     result = api_call("POST", "system/backup/backup")
     if not result:
         return False
-    
+
     # Download backup file
     backup_file = result.get('filename')
     if not backup_file:
         return False
-    
+
     # Format timestamp
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    
+
     # Download the backup file
     response = session.get(f"{OPNSENSE_URL}/system/backup/download/{backup_file}")
-    
+
     # Save to file
     with open(f"backups/config-{timestamp}.xml", 'wb') as f:
         f.write(response.content)
-    
+
     return True
 ```
 
@@ -148,21 +174,21 @@ def restore_opnsense_configuration(config_xml_path):
     try:
         with open(config_xml_path, 'rb') as f:
             files = {'conffile': (os.path.basename(config_xml_path), f, 'application/xml')}
-            
+
             # The specific endpoint and parameters must be verified from OPNsense API docs
             response = session.post(
                 f"{OPNSENSE_URL}/api/core/backup/restore",
                 files=files,
                 timeout=120  # Configuration restore can take time
             )
-        
+
         response.raise_for_status()
-        
+
         logger.info(f"Successfully initiated configuration restore from {config_xml_path}")
         logger.info("OPNsense will reboot to apply the configuration")
-        
+
         return True
-        
+
     except Exception as e:
         logger.exception(f"Error restoring OPNsense configuration: {str(e)}")
         return False
@@ -171,11 +197,13 @@ def restore_opnsense_configuration(config_xml_path):
 ### Configuration Management Workflow
 
 1. **Develop configurations:**
+
    - Create or update YAML configuration files
    - Run deployment scripts to apply changes via API
    - Test and validate changes
 
 2. **Backup configurations:**
+
    - Run the backup script to export the configuration XML
    - Store the XML file in version control
    - Tag configurations with appropriate version information
@@ -204,16 +232,19 @@ This workflow is particularly amenable to AI assistance:
 ### Step 1: Proxmox Installation
 
 1. **Download Proxmox VE ISO**
+
    ```bash
    mkdir -p ~/Downloads/proxmox
    curl -L -o ~/Downloads/proxmox/proxmox-ve_8.0-1.iso https://enterprise.proxmox.com/iso/proxmox-ve_8.0-1.iso
    ```
 
 2. **Create bootable USB drive**
+
    - Use Balena Etcher or similar tool to flash the ISO to a USB drive
    - Boot the Protectli device from this USB drive
 
 3. **Install Proxmox**
+
    - Follow the installation wizard
    - Configure static IP for management
    - Set up appropriate disk partitioning (ZFS recommended)
@@ -227,12 +258,14 @@ This workflow is particularly amenable to AI assistance:
 ### Step 2: OPNsense VM Creation and Setup
 
 1. **Download OPNsense ISO**
+
    ```bash
    mkdir -p ~/Downloads/opnsense
    curl -L -o ~/Downloads/opnsense/OPNsense-23.7-dvd-amd64.iso https://mirror.ams1.nl.leaseweb.net/opnsense/releases/23.7/OPNsense-23.7-dvd-amd64.iso
    ```
 
 2. **Create VM in Proxmox**
+
    - Upload ISO to Proxmox storage
    - Create new VM with appropriate resources
    - Configure network interfaces (WAN, LAN, optional VLANs)
@@ -247,11 +280,13 @@ This workflow is particularly amenable to AI assistance:
 ### Step 3: Setup Management Scripts
 
 1. **Create script directory structure**
+
    ```bash
    mkdir -p ~/Projects/homeserver-base/personal/opnsense-prod/{scripts,backups,configs/{interfaces,firewall,dhcp,dns,nat,vlans}}
    ```
 
 2. **Implement core API scripts**
+
    - Create API authentication module
    - Implement configuration backup/restore
    - Build YAML parsing for configurations
@@ -266,16 +301,19 @@ This workflow is particularly amenable to AI assistance:
 ## Next Steps
 
 1. **Complete Proxmox installation**
+
    - Install Proxmox on Protectli hardware
    - Configure network bridges
    - Update and optimize the system
 
 2. **Deploy OPNsense VM**
+
    - Create and configure the VM
    - Install OPNsense
    - Perform initial network setup
 
 3. **Implement configuration management**
+
    - Set up Python scripts for API interaction
    - Create configuration templates
    - Implement backup and restore functionality
