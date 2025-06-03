@@ -8,12 +8,12 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 
 ### Subnet Allocation
 
-| Subnet             | CIDR Range        | Purpose                                           | Notes                                      |
-|--------------------|-------------------|---------------------------------------------------|--------------------------------------------|
-| Static Network     | 10.10.10.0/24     | Infrastructure devices and services with static IPs| All static IP assignments in one subnet    |
-| Client Network     | 10.10.11.0/24     | Regular client devices with dynamic IPs           | DHCP-assigned addresses only               |
-| IoT Devices        | 10.10.13.0/24     | Smart home and IoT devices                        | Isolated with limited external access      |
-| Guest Network      | 10.10.14.0/24     | Guest WiFi and temporary devices                  | Isolated from main network                 |
+| Subnet             | CIDR Range        | VLAN ID | Purpose                                           | Notes                                      |
+|--------------------|-------------------|---------|---------------------------------------------------|--------------------------------------------|
+| Static Network     | 10.10.10.0/24     | 10      | Infrastructure devices and services with static IPs| All static IP assignments in one subnet    |
+| Client Network     | 10.10.11.0/24     | 11      | Regular client devices with dynamic IPs           | DHCP-assigned addresses only               |
+| Guest Network      | 10.10.12.0/24     | 12      | Guest WiFi and temporary devices                  | Isolated from main network                 |
+| IoT Devices        | 10.10.13.0/24     | 13      | Smart home and IoT devices                        | Isolated with limited external access      |
 
 ### Static Network IP Allocation (10.10.10.0/24)
 
@@ -34,6 +34,8 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 |---------------------------|-----------------|-----------------------------|-----------------------------------------|
 | PFSense Router            | 10.10.10.1      | router.home.banjonet.com    | Network gateway and firewall           |
 | Omada SDN Controller      | 10.10.10.2      | omada.home.banjonet.com     | TP-Link Omada controller for mesh WiFi |
+| Hubitat Elevation C-8 (Home) | 10.10.10.5   | hubitat-home.home.banjonet.com | Primary home automation hub         |
+| Hubitat Elevation C-8 (Garage) | 10.10.10.6 | hubitat-garage.home.banjonet.com | Secondary home automation hub     |
 | Proxmox Host (T40)        | 10.10.10.10     | proxmox.home.banjonet.com   | Dell PowerEdge T40 running Proxmox     |
 | Mac Studio M3 Ultra       | 10.10.10.15     | studio.home.banjonet.com    | AI workstation with 512GB RAM          |
 | RTX 4090 Workstation      | 10.10.10.16     | gpu.home.banjonet.com       | GPU compute node with RTX 4090         |
@@ -43,8 +45,8 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 - **Static Reservations**: All infrastructure devices and services have DHCP reservations in PFSense
 - **DHCP Ranges**:
   - Client Network: 10.10.11.10 - 10.10.11.249
+  - Guest Network: 10.10.12.10 - 10.10.12.245
   - IoT Network: 10.10.13.10 - 10.10.13.245
-  - Guest Network: 10.10.14.10 - 10.10.14.245
 
 ## IP Management for Kubernetes Services
 
@@ -113,16 +115,38 @@ The IoT network (10.10.13.0/24) is isolated with specific firewall rules to prev
 | 1      | IoT (10.10.13.0/24)| External Internet  | 80,443/TCP         | Allow  | HTTP/HTTPS for updates and API access   |
 | 2      | IoT (10.10.13.0/24)| External Internet  | 53/UDP,TCP         | Allow  | DNS resolution                          |
 | 3      | IoT (10.10.13.0/24)| External Internet  | 123/UDP            | Allow  | NTP for time synchronization            |
-| 4      | IoT (10.10.13.0/24)| Home Assistant     | 8123/TCP           | Allow  | Connect to Home Assistant               |
+| 4      | IoT (10.10.13.0/24)| Hubitat Hubs       | 80,443/TCP         | Allow  | Connect to Hubitat controllers          |
 | 5      | IoT (10.10.13.0/24)| Any                | Any                | Block  | Block all other traffic                 |
 
 ### Inbound Rules
 
 | Rule # | Source             | Destination        | Port/Protocol      | Action | Purpose                                |
 |--------|--------------------|--------------------|--------------------|---------|-----------------------------------------|
-| 1      | Home Assistant     | IoT (10.10.13.0/24)| Device-specific    | Allow  | Home Assistant control of IoT devices   |
-| 2      | Main Network       | IoT (10.10.13.0/24)| ICMP               | Allow  | Allow ping for troubleshooting          |
+| 1      | Hubitat Hubs       | IoT (10.10.13.0/24)| Device-specific    | Allow  | Hubitat control of IoT devices         |
+| 2      | Static Network     | IoT (10.10.13.0/24)| ICMP               | Allow  | Allow ping for troubleshooting          |
 | 3      | Any                | IoT (10.10.13.0/24)| Any                | Block  | Block all other traffic                 |
+
+## Guest Network Firewall Rules
+
+The Guest network (10.10.12.0/24) is isolated to protect the main network while providing internet access to visitors.
+
+### Outbound Rules
+
+| Rule # | Source               | Destination        | Port/Protocol      | Action | Purpose                                |
+|--------|----------------------|--------------------|--------------------|---------|-----------------------------------------|
+| 1      | Guest (10.10.12.0/24)| External Internet  | 80,443/TCP         | Allow  | HTTP/HTTPS for web browsing            |
+| 2      | Guest (10.10.12.0/24)| External Internet  | 53/UDP,TCP         | Allow  | DNS resolution                          |
+| 3      | Guest (10.10.12.0/24)| External Internet  | Any                | Allow  | General internet access                 |
+| 4      | Guest (10.10.12.0/24)| Static Network     | Any                | Block  | Prevent access to infrastructure        |
+| 5      | Guest (10.10.12.0/24)| Client Network     | Any                | Block  | Prevent access to personal devices      |
+| 6      | Guest (10.10.12.0/24)| IoT Network        | Any                | Block  | Prevent access to IoT devices           |
+
+### Inbound Rules
+
+| Rule # | Source               | Destination          | Port/Protocol      | Action | Purpose                                |
+|--------|----------------------|----------------------|--------------------|---------|-----------------------------------------|
+| 1      | Static Network       | Guest (10.10.12.0/24)| ICMP               | Allow  | Allow ping for troubleshooting          |
+| 2      | Any                  | Guest (10.10.12.0/24)| Any                | Block  | Block all other traffic                 |
 
 ## DNS Naming Conventions
 
@@ -153,3 +177,8 @@ To ensure consistency across all services and devices, the following DNS naming 
   - More efficient firewall and access control rules
   - Easier troubleshooting as the IP address immediately indicates the device type
   - More room for future static assignments (the entire 10.10.10.0/24 range)
+- **VLAN Implementation**: All subnets are implemented as VLANs over the same physical network infrastructure:
+  - Single physical LAN port on the router connected to a managed switch
+  - Switch handles VLAN tagging and forwarding
+  - Access points broadcast different SSIDs tagged with the appropriate VLAN
+  - This approach eliminates the need for multiple physical network interfaces while maintaining logical separation

@@ -23,19 +23,41 @@ My network is configured with dual WAN connections for redundancy:
 
 - **Primary WAN (TMobileWAN)**: Connected to interface em0, configured with DHCP
 - **Secondary WAN (StarlinkWAN)**: Connected to interface em2, configured with DHCP
-- **Static Network**: Connected to interface em1, using static IP 10.10.10.1/24
-- **Client Network**: Connected to interface opt1, using static IP 10.10.11.1/24
-- **IoT Network**: Connected to interface opt2, using static IP 10.10.13.1/24
-- **Guest Network**: Connected to interface opt3, using static IP 10.10.14.1/24
+
+I'm using VLANs to create logical separation between different network segments while using the same physical network infrastructure:
+
+- **Physical LAN Interface**: Connected to interface em1
+  - **VLAN 10 (Static Network)**: 10.10.10.0/24 - Infrastructure and services with static IPs
+  - **VLAN 11 (Client Network)**: 10.10.11.0/24 - Regular client devices with DHCP
+  - **VLAN 12 (Guest Network)**: 10.10.12.0/24 - Guest WiFi and temporary devices
+  - **VLAN 13 (IoT Network)**: 10.10.13.0/24 - Smart home and IoT devices
+
+The router (PFSense) acts as the gateway for each VLAN with the following IP addresses:
+- Static Network Gateway: 10.10.10.1/24
+- Client Network Gateway: 10.10.11.1/24
+- Guest Network Gateway: 10.10.12.1/24
+- IoT Network Gateway: 10.10.13.1/24
 
 For a comprehensive breakdown of my IP address allocation strategy, subnet organization, and DHCP configuration, see the [IP Range Planning](ip-planning.md) document.
+
+### WiFi Configuration
+
+The TP-Link Omada SDN controller manages my wireless access points and extends the VLAN configuration to WiFi clients. I've configured multiple SSIDs, each mapped to a different VLAN:
+
+| SSID (WiFi Name)      | VLAN/Network      | Purpose                                      |
+|-----------------------|-------------------|----------------------------------------------|
+| BanjoNet              | VLAN 11 (Client)  | Primary WiFi for personal devices            |
+| BanjoNet-Guest        | VLAN 12 (Guest)   | Limited access network for visitors          |
+| BanjoNet-IoT          | VLAN 13 (IoT)     | Isolated network for smart home devices      |
+
+This configuration allows me to easily control which network a device joins based on the SSID it connects to, while using the same physical access points for all networks.
 
 ### DHCP Configuration
 
 The DHCP server is enabled on multiple interfaces with the following configurations:
 - **Client Network**: 10.10.11.10 - 10.10.11.249
+- **Guest Network**: 10.10.12.10 - 10.10.12.245
 - **IoT Network**: 10.10.13.10 - 10.10.13.245
-- **Guest Network**: 10.10.14.10 - 10.10.14.245
 
 Static IP assignments for infrastructure devices and services are managed through static DHCP reservations in the 10.10.10.0/24 subnet.
 
@@ -87,3 +109,24 @@ Remote access to the network and homeserver is provided through:
    - IP address 100.126.222.114 appears to be a Tailscale IP
 
 The Tailscale setup allows secure access to internal services from anywhere without requiring traditional port forwarding through the internet-facing WAN interfaces. All required Tailscale port forwarding rules are currently enabled.
+
+## Home Automation
+
+### Hubitat Elevation C-8 Controllers
+
+My home automation system is built around two Hubitat Elevation C-8 hubs for wider coverage and redundancy:
+
+1. **Primary Hub (Home)**: 
+   - Located in the main house
+   - IP Address: 10.10.10.5 (Static Network)
+   - DNS Name: hubitat-home.home.banjonet.com
+   - Manages primary Z-Wave and Zigbee devices throughout the main residence
+
+2. **Secondary Hub (Garage)**:
+   - Located in the detached garage
+   - IP Address: 10.10.10.6 (Static Network)
+   - DNS Name: hubitat-garage.home.banjonet.com
+   - Provides extended coverage for devices in and around the garage area
+   - Serves as a backup for critical automations
+
+Both hubs are on the Static Network (10.10.10.0/24) but need to communicate with devices on the IoT Network (10.10.13.0/24), which is facilitated through specific firewall rules as documented in the [IP Planning](ip-planning.md) document.
