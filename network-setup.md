@@ -168,11 +168,11 @@ My home automation system is built around two Hubitat Elevation C-8 hubs for wid
    - DNS Name: hubitat-home.home.banjonet.com
    - Manages primary Z-Wave and Zigbee devices throughout the main residence
 
-2. **Secondary Hub (Garage)**:
-   - Located in the detached garage
+2. **Secondary Hub (Studio)**:
+   - Located in the detached garage studio
    - IP Address: 10.10.10.6 (Static Network)
-   - DNS Name: hubitat-garage.home.banjonet.com
-   - Provides extended coverage for devices in and around the garage area
+   - DNS Name: hubitat-studio.home.banjonet.com
+   - Provides extended coverage for devices in and around the garage studio area
    - Serves as a backup for critical automations
 
 Both hubs are on the Static Network (10.10.10.0/24) but need to communicate with devices on the IoT Network (10.10.13.0/24), which is facilitated through specific firewall rules as documented in the [IP Planning](ip-planning.md) document.

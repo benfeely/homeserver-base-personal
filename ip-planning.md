@@ -44,6 +44,7 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 | Omada AP (Theater Closet) | 10.10.10.24     | ap-theater.home.banjonet.com| EAP225 wireless access point           |
 | Omada AP (Studio)         | 10.10.10.25     | ap-studio.home.banjonet.com | EAP225 wireless access point           |
 | Proxmox Host (T40)        | 10.10.10.10     | proxmox.home.banjonet.com   | Dell PowerEdge T40 running Proxmox     |
+| Proxmox Host (Protectli)  | 10.10.10.11     | protectli.home.banjonet.com | Protectli Vault running Proxmox        |
 | Mac Studio M3 Ultra       | 10.10.10.15     | studio.home.banjonet.com    | AI workstation with 512GB RAM          |
 | RTX 4090 Workstation      | 10.10.10.16     | gpu.home.banjonet.com       | GPU compute node with RTX 4090         |
 
@@ -184,8 +185,7 @@ To ensure consistency across all services and devices, the following DNS naming 
 4. **IoT Devices**: `device-location.iot.banjonet.com`
    - Example: `thermostat-living.iot.banjonet.com`, `light-kitchen.iot.banjonet.com`
 
-5. **Guest Network**: `*.guest.banjonet.com`
-   - Example: `printer.guest.banjonet.com`
+5. **Guest Network**: No DNS names provided for guest devices
 
 ## Implementation Notes
 
