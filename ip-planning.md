@@ -38,6 +38,11 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 | Hubitat Elevation C-8 (Home) | 10.10.10.5   | hubitat-home.home.banjonet.com | Primary home automation hub         |
 | Hubitat Elevation C-8 (Studio) | 10.10.10.6 | hubitat-studio.home.banjonet.com | Secondary home automation hub     |
 | Apple TV                   | 10.10.10.7      | appletv.home.banjonet.com     | Media player and Tailscale exit node   |
+| Omada AP (Family Room)    | 10.10.10.21     | ap-family.home.banjonet.com | EAP683 LR wireless access point        |
+| Omada AP (Coat Closet)    | 10.10.10.22     | ap-coat.home.banjonet.com   | EAP225 wireless access point           |
+| Omada AP (Primary Bedroom)| 10.10.10.23     | ap-bedroom.home.banjonet.com| EAP225 wireless access point           |
+| Omada AP (Theater Closet) | 10.10.10.24     | ap-theater.home.banjonet.com| EAP225 wireless access point           |
+| Omada AP (Studio)         | 10.10.10.25     | ap-studio.home.banjonet.com | EAP225 wireless access point           |
 | Proxmox Host (T40)        | 10.10.10.10     | proxmox.home.banjonet.com   | Dell PowerEdge T40 running Proxmox     |
 | Mac Studio M3 Ultra       | 10.10.10.15     | studio.home.banjonet.com    | AI workstation with 512GB RAM          |
 | RTX 4090 Workstation      | 10.10.10.16     | gpu.home.banjonet.com       | GPU compute node with RTX 4090         |

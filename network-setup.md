@@ -52,6 +52,25 @@ The TP-Link Omada SDN controller manages my wireless access points and extends t
 
 This configuration allows me to easily control which network a device joins based on the SSID it connects to, while using the same physical access points for all networks.
 
+#### Wireless Access Points
+
+My WiFi coverage is provided by a mesh of TP-Link Omada access points managed by the Omada SDN Controller (10.10.10.2):
+
+| Location          | Model          | IP Address      | DNS Name                      | Coverage Area                  |
+|-------------------|----------------|-----------------|-------------------------------|--------------------------------|
+| Family Room       | EAP683 LR      | 10.10.10.21     | ap-family.home.banjonet.com   | Main living area, kitchen      |
+| Coat Closet       | EAP225         | 10.10.10.22     | ap-coat.home.banjonet.com     | Entryway, dining room          |
+| Primary Bedroom   | EAP225         | 10.10.10.23     | ap-bedroom.home.banjonet.com  | Bedrooms, upper floor          |
+| Theater Closet    | EAP225         | 10.10.10.24     | ap-theater.home.banjonet.com  | Media room, office             |
+| Studio            | EAP225         | 10.10.10.25     | ap-studio.home.banjonet.com   | Workshop, garage, yard         |
+
+All access points have been assigned static IP addresses in the infrastructure range and are configured with the following settings:
+- Firmware regularly updated (current version varies by model)
+- All three SSIDs broadcasting on appropriate VLANs
+- Band steering enabled for 2.4GHz/5GHz devices
+- Mesh backhaul using dedicated 5GHz channels
+- Fast roaming enabled for seamless transitions between APs
+
 ### DHCP Configuration
 
 The DHCP server is enabled on multiple interfaces with the following configurations:
