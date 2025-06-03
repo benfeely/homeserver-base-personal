@@ -8,6 +8,7 @@ This repository is designed to work as a nested git repository inside the [Fledg
 - [Hardware Setup](hardware-setup.md) - Detailed information about my Dell PowerEdge T40 server, including hardware specifications, upgrades, and storage configuration.
 - [Network & Router Setup](network-setup.md) - Information about my network configuration, router setup, and connectivity details.
 - [IP Range Planning](ip-planning.md) - Detailed IP address allocation strategy, subnet organization, and DHCP configuration.
+- [AI Infrastructure](ai-infrastructure.md) - Documentation of my local AI setup with Mac Studio M3 Ultra and RTX 4090 workstation.
 
 ### Configuration
 - *Additional configuration documents will be added here as they're created*

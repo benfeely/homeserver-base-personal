@@ -22,6 +22,8 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 |---------------------------|-----------------|---------------------------|----------------------------------------|
 | PFSense Router            | 10.10.10.1      | router.home.banjonet.com  | Network gateway and firewall           |
 | Omada SDN Controller      | 10.10.10.2      | omada.home.banjonet.com   | TP-Link Omada controller for mesh WiFi |
+| Mac Studio M3 Ultra       | 10.10.12.5      | studio.home.banjonet.com  | AI workstation with 512GB RAM - primary AI model host |
+| RTX 4090 Workstation      | 10.10.12.6      | gpu.home.banjonet.com     | GPU compute node with RTX 4090 - ML acceleration |
 | Proxmox Host (T40)        | 10.10.12.1      | proxmox.home.banjonet.com | Dell PowerEdge T40 running Proxmox     |
 | Kubernetes Control Plane  | 10.10.12.10     | k8s.home.banjonet.com     | Talos-based Kubernetes control plane   |
 
