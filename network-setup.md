@@ -4,7 +4,7 @@ This document outlines my specific network configuration for the homeserver-base
 
 ## Router Configuration
 
-I'm using a PFSense router for my network setup. PFSense is an open-source firewall/router software distribution based on FreeBSD.
+I'm using a PFSense router (version 23.3) for my network setup. PFSense is an open-source firewall/router software distribution based on FreeBSD. The router hostname is "router" in the domain "home.feelyfamily.com".
 
 ### Router Backups
 
@@ -17,25 +17,50 @@ To restore a router configuration from backup, use the PFSense web interface's r
 
 ### Network Layout
 
-*Document your network layout, IP ranges, VLANs, etc. here*
+My network is configured with dual WAN connections for redundancy:
+
+- **Primary WAN (TMobileWAN)**: Connected to interface em0, configured with DHCP
+- **Secondary WAN (StarlinkWAN)**: Connected to interface em2, configured with DHCP
+- **LAN**: Connected to interface em1, using static IP 10.10.10.1/24
+
+### DHCP Configuration
+
+The DHCP server is enabled on the LAN interface with the following configuration:
+- DHCP range: 10.10.10.10 - 10.10.10.245
 
 ### Port Forwarding
 
-*Document any port forwarding rules you've configured for your homeserver*
+Several port forwarding rules are configured:
+
+1. Redirect Tailscale HTTP traffic (port 80) coming in on the Tailscale interface (opt3) with destination IP 100.126.222.114 to the local HAProxy at 10.10.10.1:80
+
+2. Forward HTTPS traffic (port 443) to the gaming PC at 10.10.10.10:3000 for builder.yaarns.com
+
+3. Forward HTTP traffic (port 80) to the gaming PC at 10.10.10.10:3000 for builder.yaarns.com
 
 ### DNS Configuration
 
-*Document DNS settings, local domain names, etc.*
+The router is configured with the following DNS servers:
+- Primary: 1.1.1.1 (Cloudflare)
+- Secondary: 1.0.0.1 (Cloudflare)
+- Tertiary: 8.8.8.8 (Google)
+- Quaternary: 8.8.4.4 (Google)
 
 ### Security Measures
 
-*Document any specific security measures you've implemented at the network level*
+The router is configured with:
+- Automatic outbound NAT
+- Default PFSense firewall rules 
+- Timezone set to US/Pacific
+- HTTPS web interface on port 443 with SSL certificate
+- NAT reflection disabled
+- Protection against bogon networks
 
 ## Network Connectivity
 
 ### Physical Connectivity
 
-*Document how your server connects to the network (wired/wireless, NIC details, etc.)*
+The homeserver (Dell PowerEdge T40) is connected to the network via a wired Ethernet connection to the LAN interface of the PFSense router. The server likely has a static IP address within the 10.10.10.0/24 subnet.
 
 ### Network Performance
 
@@ -43,4 +68,11 @@ To restore a router configuration from backup, use the PFSense web interface's r
 
 ## Remote Access
 
-*Document how you access your homeserver remotely, if applicable*
+Remote access to the network and homeserver is provided through:
+
+1. PFSense web interface on port 443 (HTTPS)
+2. Tailscale VPN for secure remote access to internal resources
+   - Tailscale interface appears to be configured as opt3 in the router
+   - IP address 100.126.222.114 appears to be a Tailscale IP
+
+The Tailscale setup allows secure access to internal services from anywhere without requiring traditional port forwarding through the internet-facing WAN interfaces. All required Tailscale port forwarding rules are currently enabled.
