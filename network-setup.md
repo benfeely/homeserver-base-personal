@@ -195,3 +195,34 @@ As a Tailscale exit node, the Apple TV allows devices connected to my Tailscale 
 3. Accessing my home network services from anywhere
 
 The device is assigned a static IP on the main infrastructure subnet due to its critical role in the network architecture.
+
+## Security Devices
+
+### Eufy Security System
+
+The Eufy security system consists of a Homebase E Hub and multiple security cameras:
+
+- **Eufy Homebase E Hub**:
+  - **IP Address**: 10.10.13.30 (IoT Network)
+  - **DNS Name**: eufyhub.iot.banjonet.com
+  - **Connectivity**: Connected to the IoT network via WiFi (BanjoNet-IoT SSID)
+  - **Features**: Local storage, AI person detection, RTSP streaming
+
+- **Eufy Security Cameras**:
+  - **IP Addresses**: Assigned via DHCP in the IoT subnet (10.10.13.x)
+  - **DNS Naming Convention**: camera-location.iot.banjonet.com
+  - **Connectivity**: Connected to the Homebase E Hub
+  - **Features**: Motion detection, two-way audio, night vision
+
+The Eufy security system is configured with the following settings:
+- Local storage mode enabled (no cloud storage subscription)
+- RTSP streaming enabled for local network access
+- Motion detection with customized sensitivity per camera
+- Integration with Hubitat for home automation triggers
+
+Specific firewall rules have been configured to allow the Eufy Homebase to communicate with:
+1. External internet for firmware updates and mobile app connectivity
+2. Client network for local viewing of camera streams
+3. Hubitat hubs for integration with home automation
+
+For detailed firewall rules, see the [IP Planning](ip-planning.md) document.

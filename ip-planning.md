@@ -115,6 +115,14 @@ To ensure consistency and easy memorization, services are organized by type in s
 
 The IoT network (10.10.13.0/24) is isolated with specific firewall rules to prevent IoT devices from accessing sensitive networks while allowing necessary functionality. 
 
+### IoT Devices
+
+| Device                  | IP Address      | DNS Name                          | Purpose                         |
+|-------------------------|-----------------|-----------------------------------|----------------------------------|
+| Eufy Homebase E Hub     | 10.10.13.30     | eufyhub.iot.banjonet.com          | Central hub for Eufy cameras    |
+| Eufy Camera 1           | DHCP            | camera-location1.iot.banjonet.com | Security camera                 |
+| Eufy Camera 2           | DHCP            | camera-location2.iot.banjonet.com | Security camera                 |
+
 ### Outbound Rules
 
 | Rule # | Source             | Destination        | Port/Protocol      | Action | Purpose                                |
@@ -123,7 +131,9 @@ The IoT network (10.10.13.0/24) is isolated with specific firewall rules to prev
 | 2      | IoT (10.10.13.0/24)| External Internet  | 53/UDP,TCP         | Allow  | DNS resolution                          |
 | 3      | IoT (10.10.13.0/24)| External Internet  | 123/UDP            | Allow  | NTP for time synchronization            |
 | 4      | IoT (10.10.13.0/24)| Hubitat Hubs       | 80,443/TCP         | Allow  | Connect to Hubitat controllers          |
-| 5      | IoT (10.10.13.0/24)| Any                | Any                | Block  | Block all other traffic                 |
+| 5      | Eufy Hub (10.10.13.30) | External Internet | 8554/TCP        | Allow  | RTSP streaming for cameras              |
+| 6      | Eufy Hub (10.10.13.30) | External Internet | UDP 3478-3497   | Allow  | STUN/TURN for P2P connections          |
+| 7      | IoT (10.10.13.0/24)| Any                | Any                | Block  | Block all other traffic                 |
 
 ### Inbound Rules
 
@@ -131,7 +141,10 @@ The IoT network (10.10.13.0/24) is isolated with specific firewall rules to prev
 |--------|--------------------|--------------------|--------------------|---------|-----------------------------------------|
 | 1      | Hubitat Hubs       | IoT (10.10.13.0/24)| Device-specific    | Allow  | Hubitat control of IoT devices         |
 | 2      | Static Network     | IoT (10.10.13.0/24)| ICMP               | Allow  | Allow ping for troubleshooting          |
-| 3      | Any                | IoT (10.10.13.0/24)| Any                | Block  | Block all other traffic                 |
+| 3      | Client Network     | Eufy Hub (10.10.13.30) | 8554/TCP      | Allow  | Local RTSP access for viewing streams  |
+| 4      | Client Network     | Eufy Hub (10.10.13.30) | 443/TCP       | Allow  | Local web access to hub                |
+| 5      | Hubitat Hubs (10.10.10.5-6) | Eufy Hub (10.10.13.30) | 8554,443/TCP | Allow | Integration with home automation |
+| 6      | Any                | IoT (10.10.13.0/24)| Any                | Block  | Block all other traffic                 |
 
 ## Guest Network Firewall Rules
 
@@ -189,3 +202,8 @@ To ensure consistency across all services and devices, the following DNS naming 
   - Switch handles VLAN tagging and forwarding
   - Access points broadcast different SSIDs tagged with the appropriate VLAN
   - This approach eliminates the need for multiple physical network interfaces while maintaining logical separation
+- **Eufy Security System**: The Eufy Homebase E Hub is placed in the IoT network for security isolation:
+  - Assigned a static IP (10.10.13.30) for consistent access
+  - Specific firewall rules allow necessary connectivity while maintaining isolation
+  - Local storage and RTSP streaming are enabled to keep video data on-premises
+  - Integration with Hubitat automation hubs is facilitated through targeted firewall rules
