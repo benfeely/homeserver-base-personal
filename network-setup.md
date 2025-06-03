@@ -24,6 +24,34 @@ My network is configured with dual WAN connections for redundancy:
 - **Primary WAN (TMobileWAN)**: Connected to interface em0, configured with DHCP
 - **Secondary WAN (StarlinkWAN)**: Connected to interface em2, configured with DHCP
 
+#### WAN Failover Configuration
+
+I've implemented a dual WAN setup with automatic failover capabilities:
+
+- **Gateway Group**: "WAN_LoadBalance" configured with:
+  - TMOBILEWAN_DHCP (Priority 1) - Primary connection
+  - STARLINKWAN_DHCP (Priority 2) - Failover connection
+  - Trigger type: "downlosslatency" for comprehensive monitoring
+
+- **Gateway Monitoring**:
+  - TMOBILEWAN_DHCP monitored using 1.1.1.1 (Cloudflare DNS)
+  - STARLINKWAN_DHCP monitored using 8.8.8.8 (Google DNS)
+  - Monitor IP timeout: 1000ms (1 second)
+  - Down/up thresholds: After 3 consecutive failures, connection marked as down
+
+- **Default Gateway**: The WAN_LoadBalance gateway group is set as the default gateway for all outbound traffic, ensuring automatic failover between connections.
+
+In the planned OPNsense migration, these settings will be maintained with slight adjustments:
+- Detection time reduced to under 1 minute for faster failover
+- Maintain T-Mobile as the priority connection
+- Preserve gateway monitoring with the same IPs
+
+Future enhancements (planned but not yet implemented):
+- Configure policy-based routing for specific traffic types
+- Direct high-bandwidth, non-critical traffic (streaming media, large downloads) to Starlink
+- Ensure latency-sensitive and critical traffic (VoIP, VPN, business applications) uses T-Mobile
+- Implement bandwidth reservation to prevent either connection from becoming saturated
+
 I'm using VLANs to create logical separation between different network segments while using the same physical network infrastructure:
 
 - **Physical LAN Interface**: Connected to interface em1

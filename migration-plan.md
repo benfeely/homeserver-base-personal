@@ -80,7 +80,20 @@ cp config-backup.xml /Users/benfeely/Projects/homeserver-base/personal/backup/
    - Configure interfaces, VLANs, and basic firewall rules
    - Establish management access
 
-2. **Deploy Full Configuration**
+2. **Configure WAN Interfaces and Failover**
+   - Set up TMobileWAN (Primary) on interface em0 with DHCP
+   - Set up StarlinkWAN (Secondary) on interface em2 with DHCP
+   - Configure gateway monitoring:
+     - TMobileWAN monitored using 1.1.1.1 with 1-second interval
+     - StarlinkWAN monitored using 8.8.8.8 with 1-second interval
+     - Set down/up thresholds to 3 consecutive failures/successes
+   - Create WAN_LoadBalance gateway group with:
+     - TMobileWAN as priority 1 (primary)
+     - StarlinkWAN as priority 2 (failover)
+     - "downlosslatency" trigger type for comprehensive monitoring
+   - Configure default gateway to use WAN_LoadBalance group
+
+3. **Deploy Full Configuration**
    - Run comprehensive configuration script based on documentation
    - Configure DHCP, DNS, firewall rules, NAT, etc.
    - Validate configuration with tests

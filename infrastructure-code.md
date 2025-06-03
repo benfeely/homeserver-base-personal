@@ -711,39 +711,225 @@ def check_opnsense_health():
     return True
 ```
 
-## Conclusion
+## Dual WAN Configuration
 
-This infrastructure-as-code approach provides:
+The code-driven approach for managing the dual WAN connections and failover configuration is handled through dedicated functions and configuration files:
 
-1. **Consistency**: All network changes follow the same pattern and validation
-2. **Documentation**: The code itself serves as documentation for the network
-3. **Reproducibility**: The entire network can be rebuilt from code if needed
-4. **Auditability**: All changes are tracked in version control
-5. **Automation**: Routine tasks are automated, reducing human error
-6. **Testing**: Changes can be tested before deployment to production
-7. **Rollback**: Failed changes can be quickly rolled back
-
-By using OPNsense with its robust API capabilities, we gain the benefits of both a user-friendly web interface when needed and powerful automation capabilities for routine management tasks.
+```python
+def configure_wan_failover():
+    """Configure dual WAN connections with failover capability"""
+    # Load WAN configuration
+    config = load_config('config/wan.yaml')
+    if not config:
+        return False
     
-    # Test connectivity
-    tests = [
-        # Test IoT to Internet
-        {'source': '10.10.13.10', 'destination': '8.8.8.8', 'expected': True},
-        # Test Guest to Static (should be blocked)
-        {'source': '10.10.12.10', 'destination': '10.10.10.10', 'expected': False}
-    ]
-    
-    for test in tests:
-        result = subprocess.run(
-            ['ping', '-c', '1', '-S', test['source'], test['destination']],
-            capture_output=True
-        )
-        success = result.returncode == 0
+    # Configure each WAN interface
+    for wan in config['wan_interfaces']:
+        interface_data = {
+            "interface": {
+                "if": wan['interface'],
+                "descr": wan['description'],
+                "enable": "1",
+                "ipaddr": "dhcp",
+                "blockbogons": "1",
+                "gateway": wan['gateway']
+            }
+        }
         
-        if success != test['expected']:
-            print(f"Test failed: {test['source']} to {test['destination']}")
+        # Configure interface
+        result = api_call("POST", "interfaces/interface/setInterface", interface_data)
+        if not result:
+            logger.error(f"Failed to configure {wan['description']} interface")
             return False
     
+    # Configure gateway group for failover
+    gateway_group_data = {
+        "group": {
+            "name": config['gateway_group']['name'],
+            "gateways": config['gateway_group']['gateways'],
+            "trigger": config['gateway_group']['trigger'],
+            "description": config['gateway_group']['description']
+        }
+    }
+    
+    # Create gateway group
+    result = api_call("POST", "routes/gateway/addGroup", gateway_group_data)
+    if not result:
+        logger.error("Failed to create gateway group for WAN failover")
+        return False
+    
+    # Configure gateway monitoring
+    for gateway in config['gateways']:
+        gateway_data = {
+            "gateway": {
+                "name": gateway['name'],
+                "interface": gateway['interface'],
+                "monitorip": gateway['monitor_ip'],
+                "priority": gateway['priority'],
+                "weight": gateway['weight'],
+                "latencylow": gateway['latency_low'],
+                "latencyhigh": gateway['latency_high'],
+                "losslow": gateway['loss_low'],
+                "losshigh": gateway['loss_high'],
+                "interval": gateway['monitor_interval'],
+                "down": gateway['down_threshold'],
+                "up": gateway['up_threshold']
+            }
+        }
+        
+        # Configure gateway monitoring
+        result = api_call("POST", "routes/gateway/setGateway", gateway_data)
+        if not result:
+            logger.error(f"Failed to configure monitoring for gateway {gateway['name']}")
+            return False
+    
+    # Apply changes
+    api_call("POST", "routes/gateway/apply")
+    
+    # Update firewall default gateway to use gateway group
+    firewall_config = load_config('config/firewall.yaml')
+    if not firewall_config:
+        return False
+    
+    # Update default LAN to WAN rule to use gateway group
+    for rule in firewall_config['rules']:
+        if rule.get('default_lan_to_wan', False):
+            rule_data = {
+                "rule": {
+                    "source_net": rule['source'],
+                    "destination_net": rule['destination'],
+                    "gateway": config['gateway_group']['name'],
+                    "description": rule['description']
+                }
+            }
+            
+            result = api_call("POST", "firewall/filter/setRule", rule_data)
+            if not result:
+                logger.error("Failed to update default LAN rule to use gateway group")
+                return False
+    
+    # Apply changes
+    api_call("POST", "firewall/filter/apply")
+    
+    return True
+```
+
+Example WAN configuration (YAML):
+
+```yaml
+# config/wan.yaml
+wan_interfaces:
+  - interface: "em0"
+    description: "TMobileWAN"
+    gateway: "TMOBILEWAN_DHCP"
+    
+  - interface: "em2" 
+    description: "StarlinkWAN"
+    gateway: "STARLINKWAN_DHCP"
+
+gateways:
+  - name: "TMOBILEWAN_DHCP"
+    interface: "em0"
+    monitor_ip: "1.1.1.1"
+    priority: 1
+    weight: 1
+    latency_low: 100
+    latency_high: 500
+    loss_low: 1
+    loss_high: 10
+    monitor_interval: 1000    # 1 second monitoring interval
+    down_threshold: 3         # Mark down after 3 consecutive failures
+    up_threshold: 3           # Mark up after 3 consecutive successes
+    
+  - name: "STARLINKWAN_DHCP"
+    interface: "em2"
+    monitor_ip: "8.8.8.8" 
+    priority: 2
+    weight: 1
+    latency_low: 100
+    latency_high: 500
+    loss_low: 1
+    loss_high: 15
+    monitor_interval: 1000    # 1 second monitoring interval
+    down_threshold: 3         # Mark down after 3 consecutive failures
+    up_threshold: 3           # Mark up after 3 consecutive successes
+
+gateway_group:
+  name: "WAN_LoadBalance"
+  description: "Load balance between T-Mobile and Starlink with failover"
+  trigger: "downlosslatency"
+  gateways:
+    - gateway: "TMOBILEWAN_DHCP"
+      tier: 1                 # Primary connection
+      
+    - gateway: "STARLINKWAN_DHCP"
+      tier: 2                 # Failover connection
+```
+
+### WAN Failover Verification
+
+A dedicated script verifies the WAN failover functionality by simulating a primary WAN failure:
+
+```python
+def test_wan_failover():
+    """Test WAN failover functionality"""
+    import subprocess
+    import time
+    
+    # Test initial connectivity
+    result = subprocess.run(
+        ["ping", "-c", "3", "1.1.1.1"],
+        capture_output=True
+    )
+    
+    if result.returncode != 0:
+        logger.error("Initial connectivity test failed")
+        return False
+    
+    # Disable primary WAN for testing
+    interface_data = {
+        "interface": {
+            "if": "em0",
+            "enable": "0"
+        }
+    }
+    
+    # Temporarily disable interface
+    result = api_call("POST", "interfaces/interface/setInterface", interface_data)
+    if not result:
+        logger.error("Failed to disable primary WAN for testing")
+        return False
+    
+    # Apply changes
+    api_call("POST", "interfaces/interface/apply")
+    
+    # Wait for failover to occur (based on configured thresholds)
+    time.sleep(10)
+    
+    # Test connectivity after failover
+    result = subprocess.run(
+        ["ping", "-c", "3", "1.1.1.1"],
+        capture_output=True
+    )
+    
+    # Re-enable primary WAN
+    interface_data = {
+        "interface": {
+            "if": "em0",
+            "enable": "1"
+        }
+    }
+    
+    # Re-enable interface
+    api_call("POST", "interfaces/interface/setInterface", interface_data)
+    api_call("POST", "interfaces/interface/apply")
+    
+    # Verify failover worked
+    if result.returncode != 0:
+        logger.error("WAN failover test failed - no connectivity after primary WAN disabled")
+        return False
+    
+    logger.info("WAN failover test successful")
     return True
 ```
 
