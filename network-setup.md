@@ -4,7 +4,7 @@ This document outlines my specific network configuration for the homeserver-base
 
 ## Router Configuration
 
-I'm using a PFSense router (version 23.3) for my network setup. PFSense is an open-source firewall/router software distribution based on FreeBSD. The router hostname is "router" in the domain "home.feelyfamily.com".
+I'm using a PFSense router (version 23.3) for my network setup. PFSense is an open-source firewall/router software distribution based on FreeBSD. The router hostname is "router" in the domain "home.banjonet.com".
 
 ### Router Backups
 
@@ -12,6 +12,8 @@ The repository contains router configuration backups in the `personal/backup/` d
 
 Current backups:
 - `config-router.home.feelyfamily.com-20250602223603.xml` (June 2, 2025)
+
+Note: The backup filename still shows the old domain "home.feelyfamily.com" as it was generated before the domain change to "home.banjonet.com".
 
 To restore a router configuration from backup, use the PFSense web interface's restore functionality under Diagnostics > Backup & Restore.
 
@@ -22,6 +24,8 @@ My network is configured with dual WAN connections for redundancy:
 - **Primary WAN (TMobileWAN)**: Connected to interface em0, configured with DHCP
 - **Secondary WAN (StarlinkWAN)**: Connected to interface em2, configured with DHCP
 - **LAN**: Connected to interface em1, using static IP 10.10.10.1/24
+
+For a comprehensive breakdown of my IP address allocation strategy, subnet organization, and DHCP configuration, see the [IP Range Planning](ip-planning.md) document.
 
 ### DHCP Configuration
 
