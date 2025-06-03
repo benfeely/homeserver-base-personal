@@ -18,11 +18,11 @@ My AI infrastructure is designed to provide privacy-focused AI assistance for wo
 
 ### Network Configuration
 
-These systems are placed on the Infrastructure subnet (10.10.12.0/24) with static IP assignments:
+These systems are placed on the main Infrastructure subnet (10.10.10.0/24) with static IP assignments:
 
-- Mac Studio: 10.10.12.5 (studio.home.banjonet.com)
-- RTX 4090 Workstation: 10.10.12.6 (gpu.home.banjonet.com)
-- Proxmox Host: 10.10.12.1 (proxmox.home.banjonet.com)
+- Mac Studio: 10.10.10.15 (studio.home.banjonet.com)
+- RTX 4090 Workstation: 10.10.10.16 (gpu.home.banjonet.com)
+- Proxmox Host: 10.10.10.10 (proxmox.home.banjonet.com)
 
 ## AI Workflow Architecture
 

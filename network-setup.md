@@ -23,14 +23,21 @@ My network is configured with dual WAN connections for redundancy:
 
 - **Primary WAN (TMobileWAN)**: Connected to interface em0, configured with DHCP
 - **Secondary WAN (StarlinkWAN)**: Connected to interface em2, configured with DHCP
-- **LAN**: Connected to interface em1, using static IP 10.10.10.1/24
+- **Static Network**: Connected to interface em1, using static IP 10.10.10.1/24
+- **Client Network**: Connected to interface opt1, using static IP 10.10.11.1/24
+- **IoT Network**: Connected to interface opt2, using static IP 10.10.13.1/24
+- **Guest Network**: Connected to interface opt3, using static IP 10.10.14.1/24
 
 For a comprehensive breakdown of my IP address allocation strategy, subnet organization, and DHCP configuration, see the [IP Range Planning](ip-planning.md) document.
 
 ### DHCP Configuration
 
-The DHCP server is enabled on the LAN interface with the following configuration:
-- DHCP range: 10.10.10.10 - 10.10.10.245
+The DHCP server is enabled on multiple interfaces with the following configurations:
+- **Client Network**: 10.10.11.10 - 10.10.11.249
+- **IoT Network**: 10.10.13.10 - 10.10.13.245
+- **Guest Network**: 10.10.14.10 - 10.10.14.245
+
+Static IP assignments for infrastructure devices and services are managed through static DHCP reservations in the 10.10.10.0/24 subnet.
 
 ### Port Forwarding
 

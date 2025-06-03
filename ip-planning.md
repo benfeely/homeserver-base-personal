@@ -4,49 +4,53 @@ This document outlines my approach to IP address allocation for the homeserver-b
 
 ## Network Address Plan
 
-Based on the reference implementation in the homeserver-base project, I've adopted a similar but customized approach to IP range allocation:
+Based on the reference implementation in the homeserver-base project, I've adopted a consolidated approach to IP range allocation:
 
 ### Subnet Allocation
 
 | Subnet             | CIDR Range        | Purpose                                           | Notes                                      |
 |--------------------|-------------------|---------------------------------------------------|--------------------------------------------|
-| Main Network       | 10.10.10.0/24     | Primary home network for regular devices          | Managed by PFSense DHCP (10.10.10.10-245)  |
-| Services           | 10.10.11.0/24     | Reserved for K8s services via MetalLB             | Manually configured DNS entries as needed  |
-| Infrastructure     | 10.10.12.0/24     | Infrastructure devices (NAS, servers, etc.)       | Static IPs or long DHCP leases             |
+| Static Network     | 10.10.10.0/24     | Infrastructure devices and services with static IPs| All static IP assignments in one subnet    |
+| Client Network     | 10.10.11.0/24     | Regular client devices with dynamic IPs           | DHCP-assigned addresses only               |
 | IoT Devices        | 10.10.13.0/24     | Smart home and IoT devices                        | Isolated with limited external access      |
 | Guest Network      | 10.10.14.0/24     | Guest WiFi and temporary devices                  | Isolated from main network                 |
 
-### Key IP Assignments
+### Static Network IP Allocation (10.10.10.0/24)
 
-| Device/Service            | IP Address      | DNS Name                  | Purpose                                |
-|---------------------------|-----------------|---------------------------|----------------------------------------|
-| PFSense Router            | 10.10.10.1      | router.home.banjonet.com  | Network gateway and firewall           |
-| Omada SDN Controller      | 10.10.10.2      | omada.home.banjonet.com   | TP-Link Omada controller for mesh WiFi |
-| Mac Studio M3 Ultra       | 10.10.12.5      | studio.home.banjonet.com  | AI workstation with 512GB RAM - primary AI model host |
-| RTX 4090 Workstation      | 10.10.12.6      | gpu.home.banjonet.com     | GPU compute node with RTX 4090 - ML acceleration |
-| Proxmox Host (T40)        | 10.10.12.1      | proxmox.home.banjonet.com | Dell PowerEdge T40 running Proxmox     |
-| Kubernetes Control Plane  | 10.10.12.10     | k8s.home.banjonet.com     | Talos-based Kubernetes control plane   |
+| IP Range           | Purpose                                           | DNS Pattern                       |
+|--------------------|---------------------------------------------------|-----------------------------------|
+| 10.10.10.1-99      | Infrastructure devices (routers, switches, etc.)  | device.home.banjonet.com          |
+| 10.10.10.100-254   | Services (Kubernetes, VMs, etc.)                  | service.home.banjonet.com         |
+
+### Client Network IP Allocation (10.10.11.0/24)
+
+| IP Range           | Purpose                                           | DNS Pattern                       |
+|--------------------|---------------------------------------------------|-----------------------------------|
+| 10.10.11.10-249    | DHCP range for regular clients                    | hostname.home.banjonet.com        |
+
+### Key Infrastructure IP Assignments (10.10.10.1-99)
+
+| Device                    | IP Address      | DNS Name                    | Purpose                                |
+|---------------------------|-----------------|-----------------------------|-----------------------------------------|
+| PFSense Router            | 10.10.10.1      | router.home.banjonet.com    | Network gateway and firewall           |
+| Omada SDN Controller      | 10.10.10.2      | omada.home.banjonet.com     | TP-Link Omada controller for mesh WiFi |
+| Proxmox Host (T40)        | 10.10.10.10     | proxmox.home.banjonet.com   | Dell PowerEdge T40 running Proxmox     |
+| Mac Studio M3 Ultra       | 10.10.10.15     | studio.home.banjonet.com    | AI workstation with 512GB RAM          |
+| RTX 4090 Workstation      | 10.10.10.16     | gpu.home.banjonet.com       | GPU compute node with RTX 4090         |
 
 ## DHCP Configuration
 
-- **Static Reservations**: All infrastructure devices have DHCP reservations in PFSense to ensure consistent addressing
+- **Static Reservations**: All infrastructure devices and services have DHCP reservations in PFSense
 - **DHCP Ranges**:
-  - Main Network: 10.10.10.10 - 10.10.10.245
+  - Client Network: 10.10.11.10 - 10.10.11.249
   - IoT Network: 10.10.13.10 - 10.10.13.245
   - Guest Network: 10.10.14.10 - 10.10.14.245
 
 ## IP Management for Kubernetes Services
 
-For Kubernetes services that need to be accessible outside the cluster, I'll configure MetalLB to assign IPs from the Services subnet (10.10.11.0/24). Important services will have DNS entries configured for convenient access.
+For Kubernetes services that need to be accessible outside the cluster, I'll configure MetalLB to assign IPs from the Services range (10.10.10.100-254). Important services will have DNS entries configured for convenient access according to the service numbering scheme defined below.
 
-### Example Service Allocations
 
-| Service                   | IP Address      | DNS Name                        |
-|---------------------------|-----------------|--------------------------------|
-| Traefik Ingress           | 10.10.11.2      | traefik.home.banjonet.com   |
-| Paperless-NGX             | 10.10.11.10     | paperless.home.banjonet.com |
-| Kopia Backup              | 10.10.11.11     | backup.home.banjonet.com    |
-| Wiki.js                   | 10.10.11.12     | wiki.home.banjonet.com      |
 
 ## DNS Configuration
 
@@ -61,8 +65,91 @@ For remote access, I'm using Tailscale which simplifies the setup by providing:
 - MagicDNS for convenient naming
 - Zero-config split tunneling
 
+## Service Numbering Scheme (10.10.10.100-254)
+
+To ensure consistency and easy memorization, services are organized by type in specific IP ranges:
+
+| IP Range           | Service Type                                      | Examples                           |
+|--------------------|---------------------------------------------------|-----------------------------------|
+| 10.10.10.100-109   | Authentication & Security                         | AuthServer, VPN, Vault            |
+| 10.10.10.110-119   | Core Infrastructure                               | DNS, DHCP, NTP                    |
+| 10.10.10.120-129   | Storage & Backup                                  | NAS, Backup, Kopia                |
+| 10.10.10.130-139   | Productivity                                      | Wiki, Paperless, Notes            |
+| 10.10.10.140-149   | Media Services                                    | Plex, Jellyfin, Music             |
+| 10.10.10.150-159   | Home Automation                                   | Home Assistant, Node-RED          |
+| 10.10.10.160-169   | Monitoring & Management                           | Grafana, Prometheus, Uptime       |
+| 10.10.10.170-179   | Development & Testing                             | Git, CI/CD, Dev Environments      |
+| 10.10.10.180-189   | AI & Machine Learning                             | TensorFlow, LLM Hosting           |
+| 10.10.10.190-199   | Miscellaneous & Experimental                      | Test services, Temporary          |
+| 10.10.10.200-254   | Reserved for future service expansion             | Additional services as needed     |
+
+### Specific Service Allocations
+
+| Service                   | IP Address      | DNS Name                        | Purpose                           |
+|---------------------------|-----------------|--------------------------------|-----------------------------------|
+| Vault                     | 10.10.10.100    | vault.home.banjonet.com        | Secret management                  |
+| Tailscale                 | 10.10.10.101    | vpn.home.banjonet.com          | VPN service                        |
+| PiHole                    | 10.10.10.110    | dns.home.banjonet.com          | DNS and ad blocking                |
+| NAS                       | 10.10.10.120    | nas.home.banjonet.com          | Network storage                    |
+| Kopia                     | 10.10.10.121    | backup.home.banjonet.com       | Backup system                      |
+| Wiki.js                   | 10.10.10.130    | wiki.home.banjonet.com         | Knowledge base                     |
+| Paperless-NGX             | 10.10.10.131    | paperless.home.banjonet.com    | Document management                |
+| Plex                      | 10.10.10.140    | plex.home.banjonet.com         | Media server                       |
+| Home Assistant            | 10.10.10.150    | homeassistant.home.banjonet.com| Home automation controller         |
+| Node-RED                  | 10.10.10.151    | nodered.home.banjonet.com      | Automation workflows               |
+| Grafana                   | 10.10.10.160    | grafana.home.banjonet.com      | Monitoring dashboards              |
+| Prometheus                | 10.10.10.161    | prometheus.home.banjonet.com   | Metrics collection                 |
+| Git Server                | 10.10.10.170    | git.home.banjonet.com          | Local git repository               |
+| LLM Server                | 10.10.10.180    | llm.home.banjonet.com          | Local LLM hosting                  |
+
+## IoT Network Firewall Rules
+
+The IoT network (10.10.13.0/24) is isolated with specific firewall rules to prevent IoT devices from accessing sensitive networks while allowing necessary functionality. 
+
+### Outbound Rules
+
+| Rule # | Source             | Destination        | Port/Protocol      | Action | Purpose                                |
+|--------|--------------------|--------------------|--------------------|---------|-----------------------------------------|
+| 1      | IoT (10.10.13.0/24)| External Internet  | 80,443/TCP         | Allow  | HTTP/HTTPS for updates and API access   |
+| 2      | IoT (10.10.13.0/24)| External Internet  | 53/UDP,TCP         | Allow  | DNS resolution                          |
+| 3      | IoT (10.10.13.0/24)| External Internet  | 123/UDP            | Allow  | NTP for time synchronization            |
+| 4      | IoT (10.10.13.0/24)| Home Assistant     | 8123/TCP           | Allow  | Connect to Home Assistant               |
+| 5      | IoT (10.10.13.0/24)| Any                | Any                | Block  | Block all other traffic                 |
+
+### Inbound Rules
+
+| Rule # | Source             | Destination        | Port/Protocol      | Action | Purpose                                |
+|--------|--------------------|--------------------|--------------------|---------|-----------------------------------------|
+| 1      | Home Assistant     | IoT (10.10.13.0/24)| Device-specific    | Allow  | Home Assistant control of IoT devices   |
+| 2      | Main Network       | IoT (10.10.13.0/24)| ICMP               | Allow  | Allow ping for troubleshooting          |
+| 3      | Any                | IoT (10.10.13.0/24)| Any                | Block  | Block all other traffic                 |
+
+## DNS Naming Conventions
+
+To ensure consistency across all services and devices, the following DNS naming conventions are used:
+
+1. **Infrastructure Devices**: `device-name.home.banjonet.com`
+   - Example: `router.home.banjonet.com`, `proxmox.home.banjonet.com`
+
+2. **Services**: `service-name.home.banjonet.com`
+   - Example: `plex.home.banjonet.com`, `wiki.home.banjonet.com`
+
+3. **Workstations & Clients**: `hostname.home.banjonet.com`
+   - Example: `desktop.home.banjonet.com`, `laptop.home.banjonet.com`
+
+4. **IoT Devices**: `device-location.iot.banjonet.com`
+   - Example: `thermostat-living.iot.banjonet.com`, `light-kitchen.iot.banjonet.com`
+
+5. **Guest Network**: `*.guest.banjonet.com`
+   - Example: `printer.guest.banjonet.com`
+
 ## Implementation Notes
 
 - Unlike the main project which uses 192.168.x.x ranges, I've chosen to use 10.10.x.x ranges for better compatibility with various networks I might connect to remotely
 - My IoT network is completely isolated with specific firewall rules to prevent IoT devices from accessing the main network
 - I've expanded the number of subnets compared to the reference implementation to better isolate different types of devices
+- **Separation of Static and Dynamic IPs**: By using 10.10.10.0/24 exclusively for static IPs and 10.10.11.0/24 for DHCP clients, I've created a clean separation that makes network management easier:
+  - Simpler mental model (10.10.10.x = infrastructure/services, 10.10.11.x = clients)
+  - More efficient firewall and access control rules
+  - Easier troubleshooting as the IP address immediately indicates the device type
+  - More room for future static assignments (the entire 10.10.10.0/24 range)
