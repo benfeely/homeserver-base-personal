@@ -2,6 +2,21 @@
 
 This repository is designed to work as a nested git repository inside the [Fledgewing/homeserver-base](https://github.com/Fledgewing/homeserver-base) project. It contains personal configuration files, secrets, and customizations specific to your homeserver deployment.
 
+## Documentation Index
+
+### Hardware and Infrastructure
+- [Hardware Setup](hardware-setup.md) - Detailed information about my Dell PowerEdge T40 server, including hardware specifications, upgrades, and storage configuration.
+- [Network & Router Setup](network-setup.md) - Information about my network configuration, router setup, and connectivity details.
+
+### Configuration
+- *Additional configuration documents will be added here as they're created*
+
+### Maintenance
+- *Maintenance procedures and logs will be added here as they're created*
+
+### Backup & Recovery
+- *Backup and recovery procedures will be added here as they're created*
+
 ## Relationship with homeserver-base
 
 This repository (`homeserver-base-personal`) is meant to be:
