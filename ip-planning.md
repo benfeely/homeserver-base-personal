@@ -34,8 +34,10 @@ Based on the reference implementation in the homeserver-base project, I've adopt
 |---------------------------|-----------------|-----------------------------|-----------------------------------------|
 | PFSense Router            | 10.10.10.1      | router.home.banjonet.com    | Network gateway and firewall           |
 | Omada SDN Controller      | 10.10.10.2      | omada.home.banjonet.com     | TP-Link Omada controller for mesh WiFi |
+| HP LaserJet M575 Printer  | 10.10.10.4      | printer.home.banjonet.com   | Network multifunction printer          |
 | Hubitat Elevation C-8 (Home) | 10.10.10.5   | hubitat-home.home.banjonet.com | Primary home automation hub         |
-| Hubitat Elevation C-8 (Garage) | 10.10.10.6 | hubitat-garage.home.banjonet.com | Secondary home automation hub     |
+| Hubitat Elevation C-8 (Studio) | 10.10.10.6 | hubitat-studio.home.banjonet.com | Secondary home automation hub     |
+| Apple TV                   | 10.10.10.7      | appletv.home.banjonet.com     | Media player and Tailscale exit node   |
 | Proxmox Host (T40)        | 10.10.10.10     | proxmox.home.banjonet.com   | Dell PowerEdge T40 running Proxmox     |
 | Mac Studio M3 Ultra       | 10.10.10.15     | studio.home.banjonet.com    | AI workstation with 512GB RAM          |
 | RTX 4090 Workstation      | 10.10.10.16     | gpu.home.banjonet.com       | GPU compute node with RTX 4090         |

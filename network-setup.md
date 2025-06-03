@@ -91,6 +91,18 @@ The router is configured with:
 
 ## Network Connectivity
 
+### Network Devices
+
+#### Printer Configuration
+
+I have an HP LaserJet M575 multifunction printer configured on the network:
+- **IP Address**: 10.10.10.4 (Static Network)
+- **DNS Name**: printer.home.banjonet.com
+- **Capabilities**: Print, Scan, Copy, Fax
+- **Connectivity**: Wired Ethernet connection to the managed switch
+
+The printer is accessible from the Static Network and Client Network, but not from the Guest or IoT networks for security purposes. All print jobs are sent directly to the printer without a print server intermediary.
+
 ### Physical Connectivity
 
 The homeserver (Dell PowerEdge T40) is connected to the network via a wired Ethernet connection to the LAN interface of the PFSense router. The server likely has a static IP address within the 10.10.10.0/24 subnet.
@@ -107,6 +119,21 @@ Remote access to the network and homeserver is provided through:
 2. Tailscale VPN for secure remote access to internal resources
    - Tailscale interface appears to be configured as opt3 in the router
    - IP address 100.126.222.114 appears to be a Tailscale IP
+   - Apple TV (10.10.10.7) configured as an exit node
+
+### Tailscale Exit Node Configuration
+
+The Apple TV is configured as a Tailscale exit node, which provides the following benefits:
+
+- **Secure Internet Access**: When traveling, I can route all my internet traffic through my home network
+- **Access to LAN Resources**: Devices connected to Tailscale can access resources on my home network
+- **IP Geolocation**: Services see my home IP address rather than my current location's IP
+- **Ad-blocking**: Traffic routed through the exit node benefits from my network-wide ad-blocking
+
+The exit node configuration requires:
+1. Enabling the exit node feature in the Tailscale admin console
+2. Configuring the Apple TV as an advertised exit node
+3. Selecting the exit node on client devices when needed
 
 The Tailscale setup allows secure access to internal services from anywhere without requiring traditional port forwarding through the internet-facing WAN interfaces. All required Tailscale port forwarding rules are currently enabled.
 
@@ -130,3 +157,22 @@ My home automation system is built around two Hubitat Elevation C-8 hubs for wid
    - Serves as a backup for critical automations
 
 Both hubs are on the Static Network (10.10.10.0/24) but need to communicate with devices on the IoT Network (10.10.13.0/24), which is facilitated through specific firewall rules as documented in the [IP Planning](ip-planning.md) document.
+
+## Media Devices
+
+### Apple TV
+
+My Apple TV serves as both a media player and a Tailscale exit node:
+
+- **IP Address**: 10.10.10.7 (Static Network)
+- **DNS Name**: appletv.home.banjonet.com
+- **Tailscale Role**: Exit node for the Tailnet
+- **Location**: Living room
+
+As a Tailscale exit node, the Apple TV allows devices connected to my Tailscale network to route their internet traffic through my home network. This is particularly useful when:
+
+1. Accessing region-restricted content while traveling
+2. Improving privacy on untrusted networks
+3. Accessing my home network services from anywhere
+
+The device is assigned a static IP on the main infrastructure subnet due to its critical role in the network architecture.
